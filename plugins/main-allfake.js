@@ -57,19 +57,19 @@ global.waittt = '🚀 Cargando...'
 global.waitttt = '🚀 Cargando...'
 
 //Enlaces
-var canal = 'https://whatsapp.com/channel/0029VaQD7LAJP216tu9liI2A'  
-var canal2 = 'https://whatsapp.com/channel/0029Vam7yUg77qVaz3sIAp0z'
-var git = 'https://github.com/Dev-Diego' 
-var youtube = 'https://www.youtube.com/@OfcDiego' 
-var github = 'https://github.com/Dev-Diego/YaemoriBot-MD'  
-var panel = 'https://ctrl.corinplus.com'
-var dash = 'https://dash.corinplus.com'
-var tienda = 'https://dash.corinplus.com/store'
-var status = 'https://status.corinplus.com'
-var discord = 'https://discord.com/invite/T7ksHu7mkz'
-var paypal = 'https://paypal.me/corinplus2024'
-let tiktok = 'https://tiktok.com/@theyaemoribot'
-let correo = 'theyaemoribot@gmail.com'
+var canal = 'https://whatsapp.com/channel/0029VapwUi0Dp2QC3xO9PX42'  
+var canal2 = 'https://whatsapp.com/channel/0029VapwUi0Dp2QC3xO9PX42'
+var git = 'https://www.instagram.com/aldair_ddd' 
+var youtube = 'https://www.instagram.com/aldair_ddd' 
+var github = 'https://www.instagram.com/aldair_ddd'  
+var panel = 'https://www.instagram.com/aldair_ddd'
+var dash = 'https://www.instagram.com/aldair_ddd'
+var tienda = 'https://www.instagram.com/aldair_ddd'
+var status = 'https://www.instagram.com/aldair_ddd'
+var discord = 'https://www.instagram.com/aldair_ddd'
+var paypal = 'https://www.instagram.com/aldair_ddd'
+let tiktok = 'https://www.instagram.com/aldair_ddd'
+let correo = 'https://www.instagram.com/aldair_ddd'
 
 global.redes = [canal, canal2, git, youtube, github, panel, dash, tienda, status, discord, paypal, tiktok, correo].getRandom()
 
@@ -105,10 +105,10 @@ global.fake = { contextInfo: { isForwarded: true, forwardedNewsletterMessageInfo
 
 
 global.icono = [ 
-'https://qu.ax/EhQB.jpg',
-'https://qu.ax/AdwJ.jpg',
-'https://qu.ax/DYyJ.jpg',
-'https://qu.ax/KGNB.jpg'
+'https://qu.ax/KFrad.jpg',
+'https://qu.ax/KFrad.jpg',
+'https://qu.ax/KFrad.jpg',
+'https://qu.ax/KFrad.jpg'
 ].getRandom()
 
 global.rcanal = { contextInfo: { isForwarded: true, forwardedNewsletterMessageInfo: { newsletterJid: "120363339997618438@newsletter", serverMessageId: 100, newsletterName: namechannel, }, externalAdReply: { showAdAttribution: true, title: namebot, body: dev, mediaUrl: null, description: null, previewType: "PHOTO", thumbnailUrl: icono, sourceUrl: redes, mediaType: 1, renderLargerThumbnail: false }, }, }}
