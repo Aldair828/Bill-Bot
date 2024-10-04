@@ -25,7 +25,7 @@ let handler = async (m, { conn, usedPrefix, command, text }) => {
                       .top  para ver los mejores en créditos`;
 
         // URL de la foto que quieres enviar
-        let foto = 'https://f.uguu.se/YsTfzcSO.jpg'; // Cambia esta URL a la foto deseada
+        let foto = 'https://qu.ax/LXzyv.jpg'; // Cambia esta URL a la foto deseada
 
         conn.sendFile(m.chat, foto, 'banco.jpg', mensaje, m);
     }
