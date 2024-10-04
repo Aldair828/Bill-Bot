@@ -1,65 +1,69 @@
-let cooldowns = {}
+let handler = async (m, { conn, args, text, usedPrefix, command }) => {
+    const ruletaresultado = "https://qu.ax/Dhwa.jpg";
 
-let handler = async (m, { conn, text, command, usedPrefix }) => {
-  let users = global.db.data.users[m.sender]
+    let amount = parseInt(args[0]);
+    let color = args[1]?.toLowerCase();
+    if (args.length < 2 || !color) throw `Error, ingrese el monto y el color rojo o negro. ejemplo .ruleta 10 rojo `;
+    
+    let colores = ['rojo', 'negro'];
+    let colour = colores[Math.floor(Math.random() * colores.length)];
+    let user = global.db.data.users[m.sender];
 
-  let tiempoEspera = 10
+    if (isNaN(amount) || amount < 10) throw `Para jugar tienes que apostar 10 💎.`;
+    if (!colores.includes(color)) throw 'Debes escoger un color válido: rojo o negro';
+    if (user.limit < amount) throw `¡No tienes suficientes créditos para apostar! Tienes ${user.limit} pero necesitas al menos ${amount} 💎.`;
 
-  if (cooldowns[m.sender] && Date.now() - cooldowns[m.sender] < tiempoEspera * 1000) {
-    let tiempoRestante = segundosAHMS(Math.ceil((cooldowns[m.sender] + tiempoEspera * 1000 - Date.now()) / 1000))
-    conn.reply(m.chat, `🚩 Ya has iniciado una apuesta recientemente, espera *⏱ ${tiempoRestante}* para apostar nuevamente`, m, rcanal)
-    return
-  }
-
-  cooldowns[m.sender] = Date.now()
-
-  if (!text) return conn.reply(m.chat, `🚩 Debes ingresar una cantidad de *🍪 Cookies* y apostar a un color, por ejemplo: *${usedPrefix + command} 20 black*`, m, rcanal)
-
-  let args = text.trim().split(" ")
-  if (args.length !== 2) return conn.reply(m.chat, `🚩 Formato incorrecto. Debes ingresar una cantidad de *🍪 Cookies* y apostar a un color, por ejemplo: *${usedPrefix + command} 20 black*`, m, rcanal)
-
-  let cookies = parseInt(args[0])
-  let color = args[1].toLowerCase()
-
-  if (isNaN(cookies) || cookies <= 0) return conn.reply(m.chat, `🚩 Por favor, ingresa una cantidad válida para la apuesta.`, m, rcanal)
-
-  if (cookies > 50) return conn.reply(m.chat, "🚩 La cantidad máxima de apuesta es de 50 *🍪 Cookies*.", m, rcanal)
-
-  if (!(color === 'black' || color === 'red')) return conn.reply(m.chat, "🚩 Debes apostar a un color válido: *black* o *red*.", m, rcanal)
-
-  if (cookies > users.cookies) return conn.reply(m.chat, "🚩 No tienes suficientes *🍪 Cookies* para realizar esa apuesta.", m, rcanal)
-
-  await conn.reply(m.chat, `🚩 Apostaste ${cookies} *🍪 Cookies* al color ${color}. Espera *⏱ 10 segundos* para conocer el resultado.`, m, rcanal)
-
-  setTimeout(() => {
-    let result = Math.random()
-    let win = false
-
-    if (result < 0.5) {
-      win = color === 'black'
-    } else {
-      win = color === 'red'
+    // Obtener el multiplicador según el rango del usuario
+    let multiplicador = 1;
+    let rangoMensaje = '';
+    if (user.rango) {
+        switch (user.rango) {
+            case 'bronce':
+                multiplicador = 2;
+                break;
+            case 'plata':
+                multiplicador = 3;
+                break;
+            case 'oro':
+                multiplicador = 4;
+                break;
+            case 'diamante':
+                multiplicador = 5;
+                break;
+            case 'maestro':
+                multiplicador = 6;
+                break;
+            case 'leyenda':
+                multiplicador = 7;
+                break;
+            default:
+                multiplicador = 1;
+        }
+        rangoMensaje = `\n\n𝚃𝙸𝙴𝙽𝙴 𝚁𝙰𝙽𝙶𝙾: ${user.rango.charAt(0).toUpperCase() + user.rango.slice(1)}`;
     }
 
-    if (win) {
-      users.cookies += cookies
-      conn.reply(m.chat, `🚩 ¡Ganaste! Obtuviste ${cookies} *🍪 Cookies*. Total: ${users.cookies} *🍪 Cookies*.`, m, rcanal)
+    let result = '';
+    if (colour == color) {
+        let amountWithMultiplier = amount * multiplicador;
+        user.limit += amountWithMultiplier;
+        result = `*[ 𝙿𝚁𝚄𝙴𝙱𝙰 𝚃𝚄 𝚂𝚄𝙴𝚁𝚃𝙴 ]*\n\n` +
+                 `*𝙻𝙰 𝚁𝚄𝙻𝙴𝚃𝙰 𝙿𝙰𝚁𝙾 𝙴𝙽 𝙴𝙻 𝙲𝙾𝙻𝙾𝚁:* ${colour == 'rojo' ? '🔴' : '⚫'}${rangoMensaje}\n\n` +
+                 `*𝚄𝚂𝚃𝙴𝙳 𝙶𝙰𝙽𝙾:* ${amountWithMultiplier} 💎\n` +
+                 `*CREDITOS:* ${user.limit}`;
     } else {
-      users.cookies -= cookies
-      conn.reply(m.chat, `🚩 Perdiste. Se restaron ${cookies} *🍪 Cookies*. Total: ${users.cookies} *🍪 Cookies*.`, m, rcanal)
+        user.limit -= amount;
+        result = `*[ 𝙿𝚁𝚄𝙴𝙱𝙰 𝚃𝚄 𝚂𝚄𝙴𝚁𝚃𝙴 ]*\n\n` +
+                 `*𝙻𝙰 𝚁𝚄𝙻𝙴𝚃𝙰 𝙿𝙰𝚁𝙾 𝙴𝙽 𝙴𝙻 𝙲𝙾𝙻𝙾𝚁:* ${colour == 'rojo' ? '🔴' : '⚫'}\n\n` +
+                 `*𝚄𝚂𝚃𝙴𝙳 𝙿𝙴𝚁𝙳𝙸𝙾:* ${amount} 💎\n` +
+                 `*CREDITOS:* ${user.limit}`;
     }
 
+    conn.sendMessage(m.chat, { image: { url: ruletaresultado }, caption: result }, { quoted: m });
+};
 
-  }, 10000)
-}
-handler.tags = ['fun']
-handler.help =['ruleta *<cantidad> <color>*']
-handler.command = ['ruleta', 'roulette', 'rt']
-handler.register = true
-handler.group = true 
-export default handler
+handler.help = ['ruleta apuesta/color'];
+handler.tags = ['game'];
+handler.command = ['ruleta', 'rt'];
 
-function segundosAHMS(segundos) {
-  let segundosRestantes = segundos % 60
-  return `${segundosRestantes} segundos`
-}
+export default handler;
+
