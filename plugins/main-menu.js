@@ -1,66 +1,12 @@
 import { promises } from 'fs'
 import { join } from 'path'
-import fetch from 'node-fetch'
-import { xpRange } from '../lib/levelling.js'
 
-let tags = {
-  'main': 'MENÚ - INFO',
-  'buscador': 'MENÚ - BUSQUEDAS',
-  'fun': 'MENÚ - JUEGOS',
-  'gacha': 'MENÚ - GACHA',
-  'serbot': 'MENÚ - SUB BOTS',
-  'rpg': 'MENÚ - RPG',
-  'rg': 'MENÚ - REGISTRO',
-  'xp': 'MENÚ - EXP',
-  'sticker': 'MENÚ - STICKERS',
-  'anime': 'MENÚ - ANIMES',
-  'database': 'MENÚ - DATABASE',
-  'fix': 'MENÚ - FIXMSGESPERA',
-  'grupo': 'MENÚ - GRUPOS',
-  'nable': 'MENÚ - ON/OFF', 
-  'descargas': 'MENÚ - DESCARGAS',
-  'tools': 'MENÚ - HERRAMIENTAS',
-  'info': 'MENÚ - INFORMACIÓN',
-  'nsfw': 'MENÚ - NSFW', 
-  'owner': 'MENÚ - OWNER', 
-  'audio': 'MENÚ - AUDIOS', 
-  'ai': 'MENÚ - AI',
-  'transformador': 'MENÚ - CONVERTIDORES',
-}
-
-const defaultMenu = {
-  before: `© mᥱᥒᥙ ᥆𝖿іᥴіᥲᥣ ძᥱ ᥡᥲᥱm᥆rіᑲ᥆𝗍 ☁️
-
-*•/• Info usuario •/•*
-
-🌸 Cliente » \`\`\`%name\`\`\`
-✨️ Exp » \`\`\`%exp\`\`\`
-🍪 Galletas » \`\`\`%cookies\`\`\`
-🛡 Nivel » \`\`\`%level\`\`\`
-💫 Rango » \`\`\`%role\`\`\`
-
-*•/• Info del bot •/•*
-
-👑 Made by » \`\`\`@DevDiego\`\`\`
-🚩 Bot » \`\`\`%botofc\`\`\`
-📆 Fecha » \`\`\`%fecha\`\`\`
-🕖 Actividad » \`\`\`%muptime\`\`\`
-👤 Usuarios » \`\`\`%totalreg\`\`\`
-
-\t*L I S T A  -  D E  -  C O M A N D O S* 
-`.trimStart(),
-    header: '*•/• %category​ •/•*\n',
-  body: '✰ %cmd',
-  footer: '',
-  after: `> ${dev}`,
-}
 let handler = async (m, { conn, usedPrefix: _p, __dirname }) => {
   try {
     let _package = JSON.parse(await promises.readFile(join(__dirname, '../package.json')).catch(_ => ({}))) || {}
-    let { exp, cookies, level, role } = global.db.data.users[m.sender]
-    let { min, xp, max } = xpRange(level, global.multiplier)
+    let { exp, limit, level } = global.db.data.users[m.sender]
     let name = await conn.getName(m.sender)
-    let d = new Date(new Date + 3600000)
+    let d = new Date(new Date() + 3600000)
     let locale = 'es'
     let weton = ['Pahing', 'Pon', 'Wage', 'Kliwon', 'Legi'][Math.floor(d / 84600000) % 5]
     let week = d.toLocaleDateString(locale, { weekday: 'long' })
@@ -92,97 +38,288 @@ let handler = async (m, { conn, usedPrefix: _p, __dirname }) => {
     let uptime = clockString(_uptime)
     let totalreg = Object.keys(global.db.data.users).length
     let rtotalreg = Object.values(global.db.data.users).filter(user => user.registered == true).length
-    let help = Object.values(global.plugins).filter(plugin => !plugin.disabled).map(plugin => {
-      return {
-        help: Array.isArray(plugin.tags) ? plugin.help : [plugin.help],
-        tags: Array.isArray(plugin.tags) ? plugin.tags : [plugin.tags],
-        prefix: 'customPrefix' in plugin,
-        cookies: plugin.cookies,
-        premium: plugin.premium,
-        enabled: !plugin.disabled,
-      }
-    })
-    for (let plugin of help)
-      if (plugin && 'tags' in plugin)
-        for (let tag of plugin.tags)
-          if (!(tag in tags) && tag) tags[tag] = tag
-    conn.menu = conn.menu ? conn.menu : {}
-    let before = conn.menu.before || defaultMenu.before
-    let header = conn.menu.header || defaultMenu.header
-    let body = conn.menu.body || defaultMenu.body
-    let footer = conn.menu.footer || defaultMenu.footer
-    let after = conn.menu.after || (conn.user.jid == conn.user.jid ? '' : `Powered by https://wa.me/${conn.user.jid.split`@`[0]}`) + defaultMenu.after
-    let _text = [
-      before,
-      ...Object.keys(tags).map(tag => {
-        return header.replace(/%category/g, tags[tag]) + '\n' + [
-          ...help.filter(menu => menu.tags && menu.tags.includes(tag) && menu.help).map(menu => {
-            return menu.help.map(help => {
-              return body.replace(/%cmd/g, menu.prefix ? help : '%p' + help)
-                .replace(/%isdiamond/g, menu.diamond ? '(ⓓ)' : '')
-                .replace(/%isPremium/g, menu.premium ? '(Ⓟ)' : '')
-                .trim()
-            }).join('\n')
-          }),
-          footer
-        ].join('\n')
-      }),
-      after
-    ].join('\n')
-    let text = typeof conn.menu == 'string' ? conn.menu : typeof conn.menu == 'object' ? _text : ''
-let replace = {
-'%': '%',
-p: _p, uptime, muptime,
-me: conn.getName(conn.user.jid),
-taguser: '@' + m.sender.split("@s.whatsapp.net")[0],
-npmname: _package.name,
-npmdesc: _package.description,
-version: _package.version,
-exp: exp - min,
-maxexp: xp,
-botofc: (conn.user.jid == global.conn.user.jid ? 'Oficial' : 'SubBot'), 
-fecha: moment.tz('America/Bogota').format('DD/MM/YY'), 
-totalexp: exp,
-xp4levelup: max - exp,
-github: _package.homepage ? _package.homepage.url || _package.homepage : '[unknown github url]',
-greeting, level, cookies, name, weton, week, date, dateIslamic, time, totalreg, rtotalreg, role,
-readmore: readMore
-}
-text = text.replace(new RegExp(`%(${Object.keys(replace).sort((a, b) => b.length - a.length).join`|`})`, 'g'), (_, name) => '' + replace[name])
 
-let category = "video"
-const db = './media/database/db.json'
-const db_ = JSON.parse(fs.readFileSync(db))
-const random = Math.floor(Math.random() * db_.links[category].length)
-const rlink = db_.links[category][random]
-global.vid = rlink
-const response = await fetch(vid)
-const gif = await response.buffer()
+    // Determinar si hay códigos disponibles
+    let availableCodes = global.db.data.codes && Object.keys(global.db.data.codes).length > 0;
 
-const who = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : m.fromMe ? conn.user.jid : m.sender
+    // Texto del nuevo menú
+    let menuText = `
 
-const pp = await conn.profilePictureUrl(who, 'image').catch(_ => 'https://qu.ax/AdwJ.jpg')
+*Bienvenido* @${name} 
 
-//await conn.reply(m.chat, '*Próximamente se remitirá el menú.*', fkontak, { contextInfo:{ forwardingScore: 2022, isForwarded: true, externalAdReply: {title: packname, body: dev, sourceUrl: redeshost, thumbnail: await (await fetch(pp)).buffer() }}})
+*Puede seguir el canal del bot:* https://whatsapp.com/channel/0029VapwUi0Dp2QC3xO9PX42
 
-await m.react('⭐️') 
+*🔰INFORMACIÓN DEL BOT🔰*
 
-await conn.sendMessage(m.chat, { video: { url: vid }, caption: text.trim(), contextInfo: { mentionedJid: [m.sender], isForwarded: true, forwardedNewsletterMessageInfo: { newsletterJid: '120363263466636910@newsletter', newsletterName: '© ᥡᥲᥱm᥆rіᑲ᥆𝗍 - ᥴһᥲᥒᥒᥱᥣ 🌱', serverMessageId: -1, }, forwardingScore: 999, externalAdReply: { title: 'ᥡᥲᥱm᥆rі ᑲ᥆𝗍 ᰔᩚ', body: dev, thumbnailUrl: icono, sourceUrl: redes, mediaType: 1, renderLargerThumbnail: false,
-}, }, gifPlayback: true, gifAttribution: 0 }, { quoted: fkontak })
+*𝘈𝘊𝘛𝘜𝘈𝘓𝘐𝘡𝘈𝘊𝘐𝘖𝘕  < 1.2.1 >*
 
-//await conn.sendMessage(m.chat, {text: text, contextInfo: { forwardingScore: 999, isForwarded: true, forwardedNewsletterMessageInfo: { newsletterName: '© ᥡᥲᥱm᥆rіᑲ᥆𝗍 - ᥴһᥲᥒᥒᥱᥣ 🌱', newsletterJid: "120363263466636910@newsletter", }, externalAdReply: { title: 'ᥡᥲᥱm᥆rі ᑲ᥆𝗍 ᰔᩚ', body: dev, thumbnailUrl: 'https://qu.ax/OlTj.jpg', sourceUrl: redeshost, mediaType: 1, renderLargerThumbnail: true }}}, {quoted: fkontak})
+➢ *[👨🏻‍💻] CREADOR:* ALDAIR
+➢ *[💮] ESTADO:* ACTIVO 🟢
+➢ *[👥] USUARIOS REGISTRADOS:* ${rtotalreg} 
+➢ *[⏳] TIEMPO ACTIVO:* ${uptime}
+➢ *[🔐] MODO:* ${global.opts['self'] ? 'Privado' : 'Público'}
+
+
+
+
+ ╭──────༺♡༻──────╮
+                *INFO-BOT*
+╰──────༺♡༻──────╯
+
+
+➢ .owner 
+➥ ve los contactos de los creadores 
+
+➢ .grupos 
+➥ ve los grupos y canales oficiales del bot 
+
+➢ .estado 
+➥ ve el estado del bot 
+
+➢ .totalfunciones 
+➥ ve cuantas funciones tiene el bot 
+
+➢ .ping 
+➥ ve la velocidad del bot 
+
+➢ .runtime 
+➥ ve cuanto tiempo lleva activo el bot
+
+➢ .joinfree link
+➥ agrega al bot a tu grupo 
+
+
+╭──────༺♡༻──────╮
+               *ECONOMÍA*
+╰──────༺♡༻──────╯
+
+➢ .minar
+➥ mina diamantes
+
+➢ .cazar 
+➥ caza animales y gana créditos 
+
+➢ .slot cantidad 
+➥ apuesta créditos y gana 
+
+➢ .ruleta 10 negro / rojo 
+➥ apuesta y gana créditos 
+
+➢ .crimen 
+➥ roba créditos a otros usuarios 
+
+➢ .robar @user
+➥ roba los créditos de otros usuarios / no se puede robar si esta en el banco
+
+➢ .depositar cantidad 
+➥ deposita el dinero al Banco y guardalos 
+
+➢ .retirar cantidad 
+➥ retira el dinero del Banco 
+
+➢ .banco 
+➥ guarda tus créditos de cualquier robo 
+
+➢ .topcreditos
+➥ ve el top de mayores créditos 
+
+➢ .transferir @user cantidad 
+➥ transfiere créditos a otros usuarios
+
+
+╭──────༺♡༻──────╮
+         *TIENDA Y VENTAS*
+╰──────༺♡༻──────╯
+ 
+➢ .comprarwaifu 
+➥ comprar una waifu 
+
+➢ .miswaifus 
+➥ ve tus waifus que compraste
+
+➢ .venderwaifu
+➥ vende la waifu que tienes
+
+➢ .pokemon pikachu
+➥ para ver el pokemon y sus estadísticas
+
+➢ .comprarpokemon pikachu
+➥ compra el pokemon
+
+➢ .mipokemon
+➥ ve tu pokemon que tienes 
+
+➢ .venderpokemon número 
+➥ vende tu pokemon 
+
+➢ .regalarpokemon @user Pikachu
+➥ regala un pokemon a tu amigo 
+
+
+
+╭──────༺♡༻──────╮
+              *BUSQUEDAS*
+╰──────༺♡༻──────╯
+
+
+➢ .pinterest 
+➥ busca imágenes de pinterest
+
+➢ .fenixgpt cuanto es 1+1
+➥ busca información rápido con fenixgpt 🐦‍🔥
+
+➢ .google búsqueda
+➥ busca cosas de google 
+
+➢ .imagen búsqueda
+➥ busca imagen de lo que busques
+
+➢ .tiktok link 
+➥ descarga un vídeo de tiktok sin marca de agua 
+
+➢ .tiktoksearch nombre 
+➥ ve videos de tiktok en carrusel
+
+
+╭──────༺♡༻──────╮
+               *SUB BOTS*
+╰──────༺♡༻──────╯
+
+
+➢ .bots 
+➥ ve cuantos subots ahí 
+
+➢ .code 
+➥ pide Código para vincular y ser un subot 
+
+➢ .qr
+➥ pide Código qr para escanear y ser un subot
+
+
+╭──────༺♡༻──────╮
+                *REGISTRO*
+╰──────༺♡༻──────╯
+
+
+➢ .reg nombre.edad
+➥ regístrate en el bot 
+
+➢ .unreg número de serie 
+➥ elimina tu registro del bot 
+
+➢ .nserie 
+➥ ve tu número de serie 
+
+➢ .perfil 
+➥ ve tu perfil en el bot
+
+
+╭──────༺♡༻──────╮
+                *STICKERS*
+╰──────༺♡༻──────╯
+
+
+➢ .s / .stikert 
+➥ convierte una foto en stikert
+
+
+╭──────༺♡༻──────╮
+               *IMÁGENES*
+╰──────༺♡༻──────╯
+
+
+➢ .megumin 
+
+➢ .neko 
+
+➢ .shinobu
+
+
+╭──────༺♡༻──────╮
+               *DIVERSION*
+╰──────༺♡༻──────╯
+
+
+➢ .afk razón 
+➥ quédate afk sin que te molesten 
+
+➢ .dance @user 
+➥ baila con un usuario
+
+➢ .abrazo @user 
+➥ abraza a un usuario 
+
+➢ .golpear @user
+➥ golpear a un usuario
+
+➢ .besar @user
+➥ besa a un usuario 
+
+➢ .gay @user 
+➥ ve el promedio de gay de un usuario 
+
+➢ .ship @user @user 
+➥ shipea a dos usuarios 
+
+➢ .bot hola 
+➥ interactúa con el bot
+
+
+╭──────༺♡༻──────╮
+                  *GRUPOS*
+╰──────༺♡༻──────╯
+
+➢ .infogrupo
+➥ ve la información del grupo
+
+➢ .grupo cerrar 
+➥ cierra el grupo
+
+➢ .grupo abrir
+➥ abre el grupo 
+
+➢ .kick @user 
+➥ elimina a un usuario 
+
+➢ .link 
+➥ ve el link del Grupo 
+
+➢ .encuesta pregunta|opciones 
+➥ haz encuestas en el grupo 
+
+➢ .promote @user 
+➥ asciende a admin a un usuario 
+
+➢ .invocar mensaje 
+➥ invoca a todo el grupo
+
+
+╭──────༺♡༻──────╮
+                 *ON / OFF*
+╰──────༺♡༻──────╯
+
+
+➢ .on / off welcome 
+➥ activa y desactiva la bienvenida
+
+➢ .on / off antilink 
+➥ activa y desactiva el antilink
+
+`.trim()
+
+    let imageUrl = 'https://qu.ax/KFrad.jpg' // Reemplaza esto con el enlace directo a tu imagen
+    await conn.sendMessage(m.chat, { image: { url: imageUrl }, caption: menuText }, { quoted: m })
 
   } catch (e) {
-    await m.react(error)
-    conn.reply(m.chat, '「✘」 *Ocurrió un error al enviar el menú*', m, fake, )
+    conn.reply(m.chat, 'Lo sentimos, el menú tiene un error.', m)
     throw e
   }
 }
+
 handler.help = ['menu']
 handler.tags = ['main']
-handler.command = ['menu', 'help', 'menú', 'menuall', 'allmenú', 'allmenu', 'menucompleto'] 
-handler.register = true
-
+handler.command = ['menu', 'help', 'menú'] 
+handler.register = true 
 export default handler
 
 const more = String.fromCharCode(8206)
@@ -193,34 +330,4 @@ function clockString(ms) {
   let m = isNaN(ms) ? '--' : Math.floor(ms / 60000) % 60
   let s = isNaN(ms) ? '--' : Math.floor(ms / 1000) % 60
   return [h, m, s].map(v => v.toString().padStart(2, 0)).join(':')
-}
-
-  var ase = new Date();
-  var hour = ase.getHours();
-switch(hour){
-  case 0: hour = 'Bᴜᴇɴᴀs Nᴏᴄʜᴇs 🌙'; break;
-  case 1: hour = 'Bᴜᴇɴᴀs Nᴏᴄʜᴇs 💤'; break;
-  case 2: hour = 'Bᴜᴇɴᴀs Nᴏᴄʜᴇs 🦉'; break;
-  case 3: hour = 'Bᴜᴇɴᴏs Dɪᴀs ✨'; break;
-  case 4: hour = 'Bᴜᴇɴᴏs Dɪᴀs 💫'; break;
-  case 5: hour = 'Bᴜᴇɴᴏs Dɪᴀs 🌅'; break;
-  case 6: hour = 'Bᴜᴇɴᴏs Dɪᴀs 🌄'; break;
-  case 7: hour = 'Bᴜᴇɴᴏs Dɪᴀs 🌅'; break;
-  case 8: hour = 'Bᴜᴇɴᴏs Dɪᴀs 💫'; break;
-  case 9: hour = 'Bᴜᴇɴᴏs Dɪᴀs ✨'; break;
-  case 10: hour = 'Bᴜᴇɴᴏs Dɪᴀs 🌞'; break;
-  case 11: hour = 'Bᴜᴇɴᴏs Dɪᴀs 🌨'; break;
-  case 12: hour = 'Bᴜᴇɴᴏs Dɪᴀs ❄'; break;
-  case 13: hour = 'Bᴜᴇɴᴏs Dɪᴀs 🌤'; break;
-  case 14: hour = 'Bᴜᴇɴᴀs Tᴀʀᴅᴇs 🌇'; break;
-  case 15: hour = 'Bᴜᴇɴᴀs Tᴀʀᴅᴇs 🥀'; break;
-  case 16: hour = 'Bᴜᴇɴᴀs Tᴀʀᴅᴇs 🌹'; break;
-  case 17: hour = 'Bᴜᴇɴᴀs Tᴀʀᴅᴇs 🌆'; break;
-  case 18: hour = 'Bᴜᴇɴᴀs Nᴏᴄʜᴇs 🌙'; break;
-  case 19: hour = 'Bᴜᴇɴᴀs Nᴏᴄʜᴇs 🌃'; break;
-  case 20: hour = 'Bᴜᴇɴᴀs Nᴏᴄʜᴇs 🌌'; break;
-  case 21: hour = 'Bᴜᴇɴᴀs Nᴏᴄʜᴇs 🌃'; break;
-  case 22: hour = 'Bᴜᴇɴᴀs Nᴏᴄʜᴇs 🌙'; break;
-  case 23: hour = 'Bᴜᴇɴᴀs Nᴏᴄʜᴇs 🌃'; break;
-}
-  var greeting = hour;
+                       }
