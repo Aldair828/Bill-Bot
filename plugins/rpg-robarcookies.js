@@ -1,40 +1,64 @@
-const ro = 30;
-const handler = async (m, {conn, usedPrefix, command}) => {
-  const time = global.db.data.users[m.sender].lastrob2 + 7200000;
-  if (new Date - global.db.data.users[m.sender].lastrob2 < 7200000) {
-  conn.reply(m.chat, `*🚩 Hey! Espera ${msToTime(time - new Date())} para volver a robar*`, m, rcanal);
-  return;
-  }
-  let who;
-  if (m.isGroup) who = m.mentionedJid[0] ? m.mentionedJid[0] : m.quoted ? m.quoted.sender : false;
-  else who = m.chat;
-  if (!who) {
-  conn.reply(m.chat, `*🚩 Etiqueta al usuario.*`, m, fake)
-  return;
-    };
-  if (!(who in global.db.data.users)) { 
-  conn.reply(m.chat, `*🚩 El usuario no se encuentra en mi base de datos.*`, m, rcanal)
-return;
-  }
-  const users = global.db.data.users[who];
-  const rob = Math.floor(Math.random() * ro);
-  if (users.cookies < rob) return conn.reply(m.chat, `😔 @${who.split`@`[0]} Tiene menos de *${ro} Cookies 🍪*\nNo robes a un pobre :v`, m, {mentions: [who]});
-  global.db.data.users[m.sender].cookies += rob;
-  global.db.data.users[who].cookies -= rob;
-  conn.reply(m.chat, `*🚩 Robastes ${rob} Cookies 🍪 a @${who.split`@`[0]}*`, m, {mentions: [who]});
-  global.db.data.users[m.sender].lastrob2 = new Date * 1;
-};
-handler.help = ['rob2'];
-handler.tags = ['rpg'];
-handler.command = ['robar2', 'rob2'];
-export default handler;
+
+let minRob = 15  // Cantidad mínima de créditos que se puede robar
+let maxRob = 30  // Cantidad máxima de créditos que se puede robar
+let cooldown = 1200000  // 20 minutos en milisegundos
+
+let handler = async (m, { conn, usedPrefix, command }) => {
+    let userData = global.db.data.users[m.sender]
+    let now = Date.now()
+    let time = userData.lastrob + cooldown
+
+    if (now - userData.lastrob < cooldown) {
+        throw `*⏱️ ¡Espera ${msToTime(time - now)} para volver a robar!*`
+    }
+
+    let who
+    if (m.isGroup) 
+        who = m.mentionedJid[0] ? m.mentionedJid[0] : m.quoted ? m.quoted.sender : false
+    else 
+        who = m.chat
+
+    if (!who) 
+        throw `𝙀𝙏𝙄𝙌𝙐𝙀𝙏𝘼 𝘼 𝘼𝙇𝙂𝙐𝙄𝙀𝙉 𝙋𝘼𝙍𝘼 𝙍𝙊𝘽𝘼𝙍`
+
+    if (!(who in global.db.data.users)) 
+        throw `𝙀𝙇 𝙐𝙎𝙐𝘼𝙍𝙄𝙊 𝙉𝙊 𝙎𝙀 𝙀𝙉𝘾𝙐𝙀𝙉𝙏𝙍𝘼 𝙀𝙉 𝙈𝙄 𝘽𝘼𝙎𝙀 𝘿𝙀 𝘿𝘼𝙏𝙊𝙎.`
+
+    let targetUserData = global.db.data.users[who]
+    let robAmount = Math.floor(Math.random() * (maxRob - minRob + 1)) + minRob
+
+    // Verificar si el usuario objetivo tiene suficientes créditos fuera del banco
+    let availableCredits = targetUserData.limit
+    if (availableCredits < robAmount) 
+        return m.reply(`😿 @${who.split`@`[0]} tiene menos de *${robAmount} Créditos*. No robes a un pobre :v`, null, { mentions: [who] })
+
+    // Transferir créditos
+    userData.limit += robAmount
+    targetUserData.limit -= robAmount
+
+    // Asegurarse de que las modificaciones se guarden en la base de datos
+    global.db.write()
+
+    // Enviar mensaje de éxito
+    m.reply(`*✧ Robaste ${robAmount} Créditos a @${who.split`@`[0]}*`, null, { mentions: [who] })
+    userData.lastrob = now
+}
+
+handler.help = ['robar', 'rob']
+handler.tags = ['econ']
+handler.command = ['robar', 'rob']
+handler.group = true
+handler.register = true
+
+export default handler  
+
 function msToTime(duration) {
-  const milliseconds = parseInt((duration % 1000) / 100);
-  let seconds = Math.floor((duration / 1000) % 60);
-  let minutes = Math.floor((duration / (1000 * 60)) % 60);
-  let hours = Math.floor((duration / (1000 * 60 * 60)) % 24);
-  hours = (hours < 10) ? '0' + hours : hours;
-  minutes = (minutes < 10) ? '0' + minutes : minutes;
-  seconds = (seconds < 10) ? '0' + seconds : seconds;
-  return hours + ' Hora(s) ' + minutes + ' Minuto(s)';
+    var milliseconds = parseInt((duration % 1000) / 100),
+    seconds = Math.floor((duration / 1000) % 60),
+    minutes = Math.floor((duration / (1000 * 60)) % 60),
+    hours = Math.floor((duration / (1000 * 60 * 60)) % 24)
+    hours = (hours < 10) ? "0" + hours : hours
+    minutes = (minutes < 10) ? "0" + minutes : minutes
+    seconds = (seconds < 10) ? "0" + seconds : seconds
+    return hours + " Hora(s) " + minutes + " Minuto(s)"
 }
